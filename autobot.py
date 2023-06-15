@@ -454,6 +454,9 @@ class Login:
         tries = 0
         while int(quantidade) < pontos:
             if tries > 5:
+                login.connect(pais) if autofarm.ismain else None
+                login.get_location(pais)
+                time.sleep(2.5)
                 print("Depois de executar o tampermonkey mais 5 vezes, sua quantidade de pontos ainda é: " + str(quantidade))
                 tries = 0
             driverabs.execute_script(tampermonkey_script)
