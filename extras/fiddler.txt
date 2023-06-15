@@ -1,0 +1,21 @@
+if (oSession.uriContains("dapi/me")) {
+            var dir2 = "C:\\Users\\<SEUNOMEDEUSUARIO>\\Desktop\\requests\\rewards";
+            
+            oSession.SaveRequest(dir2 + "\\<SEUNOMEDEUSUARIO>.txt", true);
+            
+        }
+        
+        if (oSession.uriContains("chat/auth")) {
+            var dir2 = "C:\\Users\\<SEUNOMEDEUSUARIO>\\Desktop\\requests\\xbox";
+            
+            oSession.SaveRequest(dir2 + "\\<SEUNOMEDEUSUARIO>xbox.txt", true);
+            
+        }
+        if (oSession.uriContains("https://rewards.bing.com/redeem/checkout/verify"))
+        {
+            oSession.utilReplaceInRequest("GreenId=", "GreenId=Â¥");
+            oSession.utilReplaceInRequest("Your+Microsoft+Rewards+confirmation+code+is+%7B0%7D", "D");
+            oSession.utilReplaceInRequest("Il+tuo+codice+di+conferma+Microsoft+Rewards+%C3%A8+%7B0%7D", "D");
+            oSession.utilReplaceInRequest("Seu+c%C3%B3digo+de+confirma%C3%A7%C3%A3o+do+Microsoft+Rewards+%C3%A9+%7B0%7D", "D");
+            oSession.utilReplaceInRequest("O+seu+c%C3%B3digo+de+confirma%C3%A7%C3%A3o+do+programa+Microsoft+Rewards+%C3%A9+%7B0%7D", "D");
+        }
