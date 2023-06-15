@@ -1,5 +1,5 @@
 caso precise atualizar o seu rdp:
-abra o cmd como admin e execute: "net stop termservice"
+abra o cmd como admin e execute: "net stop termservice", caso fique dando ponto final infinito reinicie o pc e execute novamente
 depois dele executar, abra o link "https://github.com/affinityv/INI-RDPWRAP/blob/master/rdpwrap.ini"
 clique em raw, depois abra um bloco de notas e cole tudo que tiver no arquivo.
 salve como "rdpwrap.ini"
