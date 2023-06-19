@@ -418,7 +418,6 @@ class Login:
                 self.bingantibug('//*[@id="sb_form_c"]', driverabs)
                 break
             except:
-                login.connect(pais) if autofarm.ismain else None
                 login.get_location(pais)
                 time.sleep(2.5)
                 while True:
@@ -437,7 +436,6 @@ class Login:
                 self.bingantibug('//*[@id="sb_form_c"]', driverabs)
                 break
             except:
-                login.connect(pais) if autofarm.ismain else None
                 login.get_location(pais)
                 time.sleep(2.5)
                 while True:
@@ -453,17 +451,32 @@ class Login:
         quantidade = self.checkpesquisa()
         tries = 0
         while int(quantidade) < pontos:
-            if tries > 5:
-                login.connect(pais) if autofarm.ismain else None
+            if tries > 8:
+                # login.connect(pais) if ismain else None
                 login.get_location(pais)
-                time.sleep(2.5)
-                print("Depois de executar o tampermonkey mais 5 vezes, sua quantidade de pontos ainda é: " + str(quantidade))
+                print("Depois de executar o tampermonkey mais 8 vezes, sua quantidade de pontos ainda é: " + str(quantidade))
                 tries = 0
             driverabs.execute_script(tampermonkey_script)
             quantidade = self.checkpesquisa()
             tries += 1
         driverabs.quit()
         print("Pesquisa Completa! \n\n")
+
+    def verifica_velocidade_conexao(self):
+        url = "https://www.bing.com"
+        tempo_maximo = 7
+        try:
+            start_time = time.time()
+            response = requests.get(url, timeout=tempo_maximo, verify=False)
+            end_time = time.time()
+            tempo_resposta = end_time - start_time
+
+            if response.status_code == 200 and tempo_resposta <= tempo_maximo:
+                return True
+            else:
+                return False
+        except:
+            return False
 
     def obter_horario_brasilia(self):
         tz_brasilia = pytz.timezone('America/Sao_Paulo')
@@ -486,7 +499,8 @@ class Login:
                 linhas = arquivo.readlines()
             print("Contas desbugadas\n\n")
 
-    def get_location(self, pais):
+    def get_location(self, pais, *command):
+        tries = 0
         urllib3.disable_warnings()
         while True:
             try:
@@ -498,24 +512,51 @@ class Login:
                     return
             except:
                 pass
+            tries += 1
+            if command:
+                if tries == 30:
+                    subprocess.run("taskkill /IM openvpn.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    subprocess.run("taskkill /IM openvpn-gui.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    subprocess.Popen(command[0], shell=True)
+                    tries = 0
 
     def connect(self, pais, *disconnect):
         if not disconnect:
             print("Conectando a vpn")
-            subprocess.Popen(["nordvpn", "-c", "-g", pais], shell=True, cwd='C:/Program Files/NordVPN',
-                             stdout=-3)
-            self.get_location(pais)
-            print("Conectado a " + pais + "\n\n")
+            try:
+                subprocess.run("taskkill /IM openvpn.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run("taskkill /IM openvpn-gui.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                openvpn_gui_executable = r'"C:\Program Files\OpenVPN\bin\openvpn-gui.exe"'
+
+                # Caminho completo para o arquivo de configuração
+                config_file_path = fr'{pais.replace(" ", "")}'
+
+                # Comando para importar o arquivo de configuração usando o OpenVPN GUI
+                command = f'{openvpn_gui_executable} --connect "{config_file_path}"'
+                subprocess.Popen(command, shell=True)
+            except:
+                pass
+            self.get_location(pais, command)
+            if ismain:
+                conectado = self.verifica_velocidade_conexao()
+                if conectado:
+                    print("Conectado a " + pais + "\n\n")
+                else:
+                    self.connect(pais)
         else:
             print("Desconectando a vpn")
-            subprocess.Popen(["nordvpn", "-d"], shell=True, cwd='C:/Program Files/NordVPN', stdout=-3)
+            try:
+                subprocess.run("taskkill /IM openvpn.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run("taskkill /IM openvpn-gui.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except:
+                pass
             self.get_location("brazil")
             print("Desconectado\n\n")
 
 
 if __name__ == '__main__':
 
-    while not keyboard.is_pressed("q"):
+    while True:
 
         autofarm = AutoFarm()
         login = Login()
@@ -535,8 +576,12 @@ if __name__ == '__main__':
                 for arquivor in rewards:
                     caminho_completor = os.path.join("rewards", arquivor)
                     os.remove(caminho_completor)
+
+            if os.path.exists("IA/usuariostxt/users"):
+                shutil.rmtree(f'IA/usuariostxt/users')
+
         print("--------------- Começando ---------------\n\n")
-        login.connect("",True) if autofarm.ismain else None
+        login.connect("", True) if ismain else None
         login.get_location("brazil")
         time.sleep(2.5)
         login.desbugar(1)
@@ -571,11 +616,13 @@ if __name__ == '__main__':
 
         autofarm.sincronizar(quantidade=usuarios)
         cookiesbing = login.logarsite(autofarm.email, autofarm.senha)
-        while cookiesbing is None:
+        while not len(cookiesbing):
+            login.connect("brazil") if autofarm.ismain else None
+            login.get_location("brazil")
             cookiesbing = login.logarsite(autofarm.email, autofarm.senha)
 
         autofarm.sincronizar(quantidade=usuarios)
-        login.connect("italy") if autofarm.ismain else None
+        login.connect("italy") if ismain else None
         login.get_location("italy")
         autofarm.sincronizar(quantidade=usuarios)
         autofarm.fiddler()
@@ -583,15 +630,16 @@ if __name__ == '__main__':
         autofarm.sincronizar(quantidade=usuarios)
 
         hora_atual = login.obter_horario_brasilia()
-        if int(hora_atual) < 20:
-            login.connect("new zealand") if autofarm.ismain else None
+        if 20 > int(hora_atual) > 7:
+            login.connect("new zealand") if ismain else None
             login.get_location("new zealand")
             autofarm.sincronizar(quantidade=usuarios)
             login.pesquisa(2000, cookiesbing, "new zealand")
         else:
-            login.connect("brazil") if autofarm.ismain else None
-            login.get_location("brazil")
+            login.connect("brazil") if ismain else None
+            login.get_location("brazil") if ismain else None
             autofarm.sincronizar(quantidade=usuarios)
+            time.sleep(3)
             login.pesquisa(2000, cookiesbing, "brazil")
 
         autofarm.sincronizar(quantidade=usuarios)
