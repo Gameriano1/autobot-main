@@ -8,7 +8,6 @@ import requests as r
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service as ChromeService
-import pychrome
 from selenium.common.exceptions import TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
@@ -46,7 +45,6 @@ class login:
             driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=self.chrome_options)
             driver.get(
                 'https://login.live.com/login.srf?wa=wsignin1.0&rpsnv=13&id=264960&wreply=https%3a%2f%2fwww.bing.com%2fsecure%2fPassport.aspx%3frequrl%3dhttps%253a%252f%252fwww.bing.com%252f%253ftoWww%253d1%2526redig%253d3389C7EB769248EB8086CD884D2595CF%2526wlexpsignin%253d1%26sig%3d0A6C406EFB686EA604025253FA7C6FDA&wp=MBI_SSL&lc=1046&CSRFToken=9399de60-9308-4156-8667-596b86a444d0&aadredir=1')
-            browser = pychrome.Browser(url=driver.command_executor._url)
             self.bingantibug('//*[@id="i0116"]', driver)
             driver.find_element('xpath', '//*[@id="i0116"]').send_keys(email)
 
@@ -59,6 +57,7 @@ class login:
 
             self.bingantibug('//*[@id="idSIButton9"]', driver)
             driver.find_element('xpath', '//*[@id="idSIButton9"]').click()
+            time.sleep(3)
             titulo = driver.title
             while titulo == "Continuar":
                 titulo = driver.title
@@ -66,6 +65,7 @@ class login:
                 self.bingantibug('//*[@id="iShowSkip"]', driver)
                 driver.find_element('xpath', '//*[@id="iShowSkip"]').click()
                 titulo = driver.title
+            time.sleep(4)
             driver.get("https://bing.com")
             try:
                 driver.find_element('xpath', '//*[@id="iShowSkip"]').click()
@@ -106,10 +106,10 @@ class login:
             }
 
             cookies_requests = {cookie['name']: cookie['value'] for cookie in cookies}
-            response = requests.post("https://rewards.bing.com/optout", headers=headers, cookies=cookies_requests, data=payload)
+            response = requests.post("https://rewards.bing.com/optout", headers=headers, cookies=cookies_requests, data=payload, verify=False)
             while response.status_code != 200:
                 print("Não desbugou direito, tentando dnv")
-                response = requests.post("https://rewards.bing.com/optout", headers=headers, cookies=cookies_requests, data=payload)
+                response = requests.post("https://rewards.bing.com/optout", headers=headers, cookies=cookies_requests, data=payload, verify=False)
 
             time.sleep(3)
             self.delay = 25
@@ -132,9 +132,12 @@ class login:
                 driver.find_element('xpath', '//*[@id="Accept"]').click()
                 time.sleep(4)
                 mostra = driver.find_elements('xpath', '//*[@id="undefined"]/div[2]/div/button')
+            time.sleep(4)
             url = driver.current_url
             while url != "https://www.xbox.com/pt-BR/":
                 try:
+                    driver.get(
+                        "https://account.xbox.com/pt-br/accountcreation?returnUrl=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&ru=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&rtc=1&csrf=3VhQvhdMuj732EgcoWdImeMRZtPOvCd4I3KCMOf43kD0IYXFqOhyr1VpL60wRIIjzzNB6RpmOc4YJcvfLkVCwo16OyA1&wa=wsignin1.0")
                     driver.find_element('xpath', '//*[@id="Accept"]').click()
                 except:
                     pass
@@ -245,7 +248,11 @@ class Desbug:
         else:
             Login.manager()
 
-
-        for i in acc.item:
-            requests.delete(dtb + "Contas/" + i + "/.json", verify=False)
+        while True:
+            try:
+                for i in acc.item:
+                    requests.delete(dtb + "Contas/" + i + "/.json", verify=False)
+                break
+            except:
+                continue
         return Login.contas
