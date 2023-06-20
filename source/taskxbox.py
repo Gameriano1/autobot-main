@@ -235,6 +235,10 @@ class Farm:
                 t = threading.Thread(target=Farm.TaskXbox, args=(o, auths, countries, cc, mscv, cook))
                 threads.append(t)
                 t.start()
+            o = "_Welcome_Tour_XboxApp_Offer"
+            t = threading.Thread(target=Farm.TaskXbox,args=(o,auths,countries,cc,mscv,cook))
+            threads.append(t)
+            t.start()
             for t in threads:
                 t.join()
 
