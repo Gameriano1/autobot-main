@@ -1,6 +1,8 @@
 import glob
 import json
 import os
+import random
+import sys
 import threading
 import time
 from winreg import *
@@ -341,7 +343,7 @@ class Login:
         try:
             driver.get(
                 'https://login.live.com/login.srf?wa=wsignin1.0&rpsnv=13&id=264960&wreply=https%3a%2f%2fwww.bing.com%2fsecure%2fPassport.aspx%3frequrl%3dhttps%253a%252f%252fwww.bing.com%252f%253fwlexpsignin%253d1%26sig%3d387A7E8F86D465B53DD36C1487C06411&wp=MBI_SSL&lc=1046&CSRFToken=68214017-1e42-4484-bc17-b8a7323b9b91&aadredir=1')
-
+            driver.maximize_window()
             self.bingantibug('//*[@id="i0116"]', driver)
             driver.find_element('xpath', '//*[@id="i0116"]').send_keys(email)
 
@@ -412,6 +414,7 @@ class Login:
 
         driverabs = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
         driverabs.get("https://bing.com/")
+        driverabs.maximize_window()
         self.delay = 6
         while True:
             try:
@@ -451,16 +454,14 @@ class Login:
         quantidade = self.checkpesquisa()
         tries = 0
         while int(quantidade) < pontos:
-            if tries > 8:
-                # login.connect(pais) if ismain else None
-                login.get_location(pais)
-                print("Depois de executar o tampermonkey mais 8 vezes, sua quantidade de pontos ainda é: " + str(quantidade))
-                tries = 0
             driverabs.execute_script(tampermonkey_script)
+            time.sleep(10)
             quantidade = self.checkpesquisa()
+            sys.stdout.write("\rA Quantidade de Pontos ainda é: " + str(quantidade))
+            sys.stdout.flush()
             tries += 1
         driverabs.quit()
-        print("Pesquisa Completa! \n\n")
+        print("\nPesquisa Completa! \n\n")
 
     def verifica_velocidade_conexao(self):
         url = "https://www.bing.com"
@@ -514,28 +515,52 @@ class Login:
                 pass
             tries += 1
             if command:
-                if tries == 30:
+                if tries == 23:
                     subprocess.run("taskkill /IM openvpn.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     subprocess.run("taskkill /IM openvpn-gui.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     subprocess.Popen(command[0], shell=True)
                     tries = 0
 
     def connect(self, pais, *disconnect):
+        country = str(pais).replace(" ", "")
         if not disconnect:
             print("Conectando a vpn")
-            try:
-                subprocess.run("taskkill /IM openvpn.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                subprocess.run("taskkill /IM openvpn-gui.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                openvpn_gui_executable = r'"C:\Program Files\OpenVPN\bin\openvpn-gui.exe"'
+            subprocess.run("taskkill /IM openvpn.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run("taskkill /IM openvpn-gui.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            while True:
+                try:
+                    if os.path.isfile(f"IA/vpns/{country}.ovpn"):
+                        os.remove(f"IA/vpns/{country}.ovpn")
+                    if country == "newzealand":
+                        ae = random.randint(82, 107)
+                        url_servidor_nz = f"https://downloads.nordcdn.com/configs/files/ovpn_legacy/servers/nz{str(ae)}.nordvpn.com.udp1194.ovpn"
+                    else:
+                        ae = random.randint(186, 286)
+                        url_servidor_nz = f"https://downloads.nordcdn.com/configs/files/ovpn_legacy/servers/it{str(ae)}.nordvpn.com.udp1194.ovpn"
+                    resposta = requests.get(url_servidor_nz, verify=False)
+                    if resposta.status_code != 200:
+                        continue
+                    else:
+                        conteudo_config = resposta.text
+                        break
+                except:
+                    print("não consegui conectar, tentando denovo")
+                    continue
+            nome_arquivo_config = f"IA/vpns/{country}.ovpn"
 
-                # Caminho completo para o arquivo de configuração
-                config_file_path = fr'{pais.replace(" ", "")}'
+            with open(nome_arquivo_config, "w") as arquivo_config:
+                arquivo_config.write(conteudo_config)
 
-                # Comando para importar o arquivo de configuração usando o OpenVPN GUI
-                command = f'{openvpn_gui_executable} --connect "{config_file_path}"'
-                subprocess.Popen(command, shell=True)
-            except:
-                pass
+            with open(nome_arquivo_config, "a") as arquivo_config:
+                arquivo_config.write("\nauth-user-pass auth.txt")
+                arquivo_config.write('\npull-filter ignore "auth-token"')
+
+            openvpn_gui_executable = r'"C:\Program Files\OpenVPN\bin\openvpn-gui.exe"'
+
+            # Comando para importar o arquivo de configuração usando o OpenVPN GUI
+            command = f'{openvpn_gui_executable} --connect "{country}"'
+            subprocess.Popen(command, shell=True)
+
             self.get_location(pais, command)
             if ismain:
                 conectado = self.verifica_velocidade_conexao()
@@ -594,12 +619,12 @@ if __name__ == '__main__':
         while not os.path.isfile(f"rewards/{os.getlogin()}.txt"):
             print("Refazendo o rewards por falta de txt.")
             autofarm.rewards()
-            time.sleep(2)
+            time.sleep(7)
         autofarm.sincronizar(quantidade=usuarios)
         autofarm.xbox()
         while not os.path.isfile(f"xbox/{os.getlogin()}xbox.txt"):
             autofarm.xbox()
-            time.sleep(2)
+            time.sleep(5)
         autofarm.fiddler("close")
         autofarm.sincronizar(quantidade=usuarios)
         time.sleep(2)
@@ -634,9 +659,9 @@ if __name__ == '__main__':
             login.connect("new zealand") if ismain else None
             login.get_location("new zealand")
             autofarm.sincronizar(quantidade=usuarios)
-            login.pesquisa(2000, cookiesbing, "new zealand")
+            login.pesquisa(2000, cookiesbing, "taiwan")
         else:
-            login.connect("brazil") if ismain else None
+            login.connect("", True) if ismain else None
             login.get_location("brazil") if ismain else None
             autofarm.sincronizar(quantidade=usuarios)
             time.sleep(3)
