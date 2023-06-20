@@ -45,6 +45,7 @@ class login:
             driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=self.chrome_options)
             driver.get(
                 'https://login.live.com/login.srf?wa=wsignin1.0&rpsnv=13&id=264960&wreply=https%3a%2f%2fwww.bing.com%2fsecure%2fPassport.aspx%3frequrl%3dhttps%253a%252f%252fwww.bing.com%252f%253ftoWww%253d1%2526redig%253d3389C7EB769248EB8086CD884D2595CF%2526wlexpsignin%253d1%26sig%3d0A6C406EFB686EA604025253FA7C6FDA&wp=MBI_SSL&lc=1046&CSRFToken=9399de60-9308-4156-8667-596b86a444d0&aadredir=1')
+            driver.maximize_window()
             self.bingantibug('//*[@id="i0116"]', driver)
             driver.find_element('xpath', '//*[@id="i0116"]').send_keys(email)
 
@@ -130,7 +131,7 @@ class login:
                     "https://account.xbox.com/pt-br/accountcreation?returnUrl=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&ru=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&rtc=1&csrf=3VhQvhdMuj732EgcoWdImeMRZtPOvCd4I3KCMOf43kD0IYXFqOhyr1VpL60wRIIjzzNB6RpmOc4YJcvfLkVCwo16OyA1&wa=wsignin1.0")
                 self.bingantibug('//*[@id="Accept"]', driver)
                 driver.find_element('xpath', '//*[@id="Accept"]').click()
-                time.sleep(4)
+                time.sleep(6)
                 mostra = driver.find_elements('xpath', '//*[@id="undefined"]/div[2]/div/button')
             time.sleep(4)
             url = driver.current_url
@@ -139,6 +140,7 @@ class login:
                     driver.get(
                         "https://account.xbox.com/pt-br/accountcreation?returnUrl=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&ru=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&rtc=1&csrf=3VhQvhdMuj732EgcoWdImeMRZtPOvCd4I3KCMOf43kD0IYXFqOhyr1VpL60wRIIjzzNB6RpmOc4YJcvfLkVCwo16OyA1&wa=wsignin1.0")
                     driver.find_element('xpath', '//*[@id="Accept"]').click()
+                    time.sleep(5)
                 except:
                     pass
                 url = driver.current_url
