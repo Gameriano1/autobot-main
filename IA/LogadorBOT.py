@@ -12,7 +12,7 @@ CAMERA = "camera.png"
 EMAILS_E_CONTAS = "emailsecontas.png"
 MS_LOGO = "mslogo.png"
 REMOVERBOTAO = "removerbotao.png"
-SIMREMOVER = "simremover.png"
+SIMREMOVER = "yes.png"
 ADICIONAR_CONTA = "adicionarconta.png"
 OUTLOOK_COM = "outlookcom.png"
 CONTINUARBUTAO = "continuarbotao.png"
@@ -23,6 +23,8 @@ ENTRARBOTAO = "entrarbotao.png"
 PROXIMOUSARESSACONTA = "proximousaressaconta.png"
 CONCLUIDOBOTAO = "concluidobotao.png"
 AGUARDE = "aguarde.png"
+GERENCIAR = "gerenciar.png"
+INFOS = "suasinformacoes.png"
 
 
 class AutoLogin:
@@ -33,43 +35,56 @@ class AutoLogin:
 
     def normal(self, email, senha):
 
-        # with open(self.txt, 'r') as arquivo:
-        #     linhas = arquivo.readlines()
-        #     if not len(linhas):
-        #         raise Exception("sem contas adicionadas no txt!")
-        #     self.primeiralinha = linhas[0]
-        #     if self.delete:
-        #         linhas.remove(self.primeiralinha)
-        #
-        #         with open(self.txt, 'w') as arquivo:
-        #             arquivo.writelines(linhas)
-
-        # self.email, self.senha = str(self.primeiralinha).split(';')
-        # print(self.email + ";" + self.senha)
-
         os.system("start ms-settings:")
         time.sleep(1)
-        controller, imprimir = AImg("intell/imgs", "intell/imgs/users", str(os.getlogin()) + '.png',
-                                    0.8), AImg.Printer()
+        controller = AImg("intell/imgs", 0.9)
 
         controller.WaitUntil(CONTAS)
-        controller.WaitDisappear(UPDATE)
 
         controller.WaitUntil(CAMERA, True)
         parar = controller.Exists(PARAR_DE_ENTRAR)
         print("parar entrar")
         if parar:
             controller.WaitUntil(PARAR_DE_ENTRAR)
-            time.sleep(1.5)
+            controller.WaitDisappear(PARAR_DE_ENTRAR)
+            time.sleep(3)
 
         controller.WaitUntil(EMAILS_E_CONTAS)
-        controller.WaitUntil(EMALIS)
-        time.sleep(1.5)
-        para = controller.Exists(MS_LOGO)
-        if para:
-            controller.WaitUntil(MS_LOGO)
-            controller.WaitUntil(REMOVERBOTAO)
-            controller.WaitUntil(SIMREMOVER)
+        controller.WaitUntil(EMALIS, True)
+        if parar:
+            while True:
+                time.sleep(3.5)
+                existe = controller.Exists(MS_LOGO)
+                if existe:
+                    controller.WaitUntil(MS_LOGO)
+                    time.sleep(1)
+                    existe = controller.Exists(REMOVERBOTAO)
+                    if existe:
+                        controller.WaitUntil(REMOVERBOTAO)
+                    while not existe:
+                        controller.WaitUntil(INFOS)
+                        controller.WaitUntil(CAMERA, True)
+                        existe = controller.Exists(PARAR_DE_ENTRAR)
+                        if existe:
+                            controller.WaitUntil(PARAR_DE_ENTRAR)
+                            controller.WaitDisappear(PARAR_DE_ENTRAR)
+                            time.sleep(3)
+                        controller.WaitUntil(EMAILS_E_CONTAS)
+                        controller.WaitUntil(MS_LOGO)
+                        existe = controller.Exists(REMOVERBOTAO)
+                        if existe:
+                            controller.WaitUntil(REMOVERBOTAO)
+                    controller.WaitUntil(SIMREMOVER)
+                    controller.WaitUntil(INFOS)
+                    controller.WaitUntil(CAMERA, True)
+                    controller.WaitUntil(EMAILS_E_CONTAS)
+                    controller.WaitUntil(EMALIS, True)
+                    time.sleep(1.5)
+                    controller.WaitDisappear(MS_LOGO)
+                    break
+                else:
+                    break
+
         controller.WaitUntil(ADICIONAR_CONTA)
         controller.WaitUntil(OUTLOOK_COM)
         controller.WaitUntil(CONTINUARBUTAO)
@@ -79,7 +94,11 @@ class AutoLogin:
         controller.WaitUntil(SENHA)
         pyautogui.write(senha)
         controller.WaitUntil(ENTRARBOTAO)
-        controller.WaitUntil(PROXIMOUSARESSACONTA)
+        existe = controller.WaitIf(PROXIMOUSARESSACONTA, PROXIMOBOTAO)
+        if existe == "1 Valido":
+            controller.WaitUntil(PROXIMOUSARESSACONTA)
+        if existe == "2 Valido":
+            controller.WaitUntil(PROXIMOBOTAO)
         controller.WaitDisappear(AGUARDE)
         subprocess.run("taskkill /IM SystemSettings.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
