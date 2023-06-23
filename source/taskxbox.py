@@ -22,10 +22,14 @@ class Xbox:
             'Authorization': auth,
             'Cache-Control': 'no-cache'
         }
-
-        response = requests.post(f"https://presence-heartbeat.xboxlive.com/users/xuid({xuid})/devices/current",
-                                 json=payload,
-                                 headers=headers, verify=False)
+        while True:
+            try:
+                response = requests.post(f"https://presence-heartbeat.xboxlive.com/users/xuid({xuid})/devices/current",
+                                        json=payload,
+                                        headers=headers, verify=False)
+                break
+            except:
+                continue
         if response.status_code != 200:
             p = 16
             while response.status_code != 200:
@@ -33,9 +37,14 @@ class Xbox:
                     "\r" + "Um Erro foi Encontrado, Esperando " + str(p) + " segundos e tentando executar novamente")
                 stdout.flush()
                 time.sleep(p)
-                response = requests.post(f"https://presence-heartbeat.xboxlive.com/users/xuid({xuid})/devices/current",
-                                         json=payload,
-                                         headers=headers, verify=False)
+                while True:
+                    try:
+                        response = requests.post(f"https://presence-heartbeat.xboxlive.com/users/xuid({xuid})/devices/current",
+                                                 json=payload,
+                                                 headers=headers, verify=False)
+                        break
+                    except:
+                        continue
 
     def conquistar(xuid, auth, ide, scid, idi):
 
@@ -57,10 +66,14 @@ class Xbox:
             'Host': 'achievements.xboxlive.com',
             'Connection': None,
         }
-
-        responsi = requests.post(
-            f"https://achievements.xboxlive.com/users/xuid(" + xuid + ")/achievements/" + scid + "/update?",
-            json=payloadconquistar, headers=headersconquistar, verify=False)
+        while True:
+            try:
+                responsi = requests.post(
+                    f"https://achievements.xboxlive.com/users/xuid(" + xuid + ")/achievements/" + scid + "/update?",
+                    json=payloadconquistar, headers=headersconquistar, verify=False)
+                break
+            except:
+                continue
         if responsi.status_code == 200 or responsi.status_code == 304:
             pass
         elif responsi.status_code == 429:
@@ -69,9 +82,14 @@ class Xbox:
                     "\r" + "Um Erro foi Encontrado, Esperando " + "5" + " segundos e tentando executar novamente")
                 stdout.flush()
                 time.sleep(5)
-                responsi = requests.post(
-                    f"https://achievements.xboxlive.com/users/xuid(" + xuid + ")/achievements/" + scid + "/update?",
-                    json=payloadconquistar, headers=headersconquistar, verify=False)
+                while True:
+                    try:
+                        responsi = requests.post(
+                            f"https://achievements.xboxlive.com/users/xuid(" + xuid + ")/achievements/" + scid + "/update?",
+                            json=payloadconquistar, headers=headersconquistar, verify=False)
+                        break
+                    except:
+                        continue
         else:
             pass
 
@@ -120,7 +138,7 @@ class Xbox:
                 if nume >= 10:
                     break
 
-def checkpesquisa(authenticate):
+def checkpesquisa(authenticate, pais):
     headersfarm = {
             'Cache-Control': 'no-cache',
             'Accept': 'application/json',
@@ -133,9 +151,27 @@ def checkpesquisa(authenticate):
             'Host': 'prod.rewardsplatform.microsoft.com',
     }
 
-    status = requests.get("https://prod.rewardsplatform.microsoft.com/dapi/me?channel=xboxapp&options=6",
-                              headers=headersfarm, verify=False).json()
-    return status['response']['balance']
+    if pais == "brazil":
+        countries = "PTBR"
+    elif pais == "new zealand":
+        countries = "ENNZ"
+    else:
+        countries = "ITIT"
+    while True:
+        try:
+            status = requests.get("https://prod.rewardsplatform.microsoft.com/dapi/me?channel=xboxapp&options=6",
+                                headers=headersfarm, verify=False).json()
+            itens = [tasks for tasks in status['response']["counters"] if tasks.__contains__("RewardsOnboarding")]
+            taskspais = [tasks.replace(f"{countries}_xboxapp_punchcard_RewardsOnboarding_", "") for tasks in itens if tasks.__contains__(countries)]
+
+            pesquisa = [quanto for quanto in taskspais if quanto.__contains__("pcchild2_searche")]
+            try:
+                vixe = status['response']["counters"][f"{countries}" + "_xboxapp_punchcard_RewardsOnboarding_" + pesquisa[0]]
+            except:
+                vixe = "0"
+        except:
+            continue
+        return status['response']['balance'], str(vixe).split(";")[0]
 
 class Farm:
     def TaskXbox(o, authenticate, country, abreviados, mscv, cookies):
@@ -166,33 +202,25 @@ class Farm:
             "id": "", "timestamp": "", "type": 80, "amount": 1, "country": f"{abreviados}", "retry_in_background": 'true',
             "attributes": {"offerid": f"{country}{o}"}
         }
-
-        tentar = requests.post('https://prod.rewardsplatform.microsoft.com/dapi/me/activities', json=payloadfarm,
+        while True:
+            try:
+                tentar = requests.post('https://prod.rewardsplatform.microsoft.com/dapi/me/activities', json=payloadfarm,
                                headers=headersfarm, cookies=cookie, verify=False)
+                break
+            except:
+                continue
         while tentar.status_code != 200:
             stdout.write(f"\rOcorreu um Erro 💀 , pais: {abreviados}")
-            tentar = requests.post('https://prod.rewardsplatform.microsoft.com/dapi/me/activities',
+            while True:
+                try:
+                    tentar = requests.post('https://prod.rewardsplatform.microsoft.com/dapi/me/activities',
                                    json=payloadfarm,
                                    headers=headersfarm, cookies=cookie, verify=False)
+                    break
+                except:
+                    continue
             if tentar.status_code == 200:
                 stdout.write("\rErro Resolvido 🔥")
-
-    def checkpesquisa(authenticate):
-        headersfarm = {
-                'Cache-Control': 'no-cache',
-                'Accept': 'application/json',
-                'Accept-Encoding': 'gzip, deflate',
-                'X-Rewards-AppId': 'RewardsAppOnXbox v1.1.1.0',
-                'X-Rewards-Country': "IT",
-                'X-Rewards-Language': 'it-IT',
-                'Authorization': f'{authenticate}',
-                'Connection': 'Keep-Alive',
-                'Host': 'prod.rewardsplatform.microsoft.com',
-        }
-
-        status = requests.get("https://prod.rewardsplatform.microsoft.com/dapi/me?channel=xboxapp&options=6",
-                                  headers=headersfarm, verify=False).json()
-        return status['response']['balance']
 
 
     def RewardsRun(auths, mscv, cook, countries, cc):
@@ -219,7 +247,12 @@ class Farm:
         while True:
             threads = []
             taskscompletar = ["pcchild1_dset", "pcchild3_shope", "pcchild5_gpquest", "pcchild6_redeem", "pcchild7_app"]
-            status = requests.get("https://prod.rewardsplatform.microsoft.com/dapi/me?channel=xboxapp&options=6", headers=headersfarm, cookies=cookie, verify=False).json()
+            while True:
+                try:
+                    status = requests.get("https://prod.rewardsplatform.microsoft.com/dapi/me?channel=xboxapp&options=6", headers=headersfarm, cookies=cookie, verify=False).json()
+                    break
+                except:
+                    continue
             itens = [tasks for tasks in status['response']["counters"] if tasks.__contains__("RewardsOnboarding")]
             taskspais = [tasks.replace(f"{countries}_xboxapp_punchcard_RewardsOnboarding_", "") for tasks in itens if tasks.__contains__(countries)]
             try:
