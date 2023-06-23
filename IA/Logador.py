@@ -1,8 +1,9 @@
 import os
 import time
-
+from winreg import *
 import mouse
 import pyautogui
+import pygetwindow as gw
 
 from intell.IAA import AImg
 
@@ -25,6 +26,7 @@ ENTRARBOTAO = "entrarbotao.png"
 PROXIMOUSARESSACONTA = "proximousaressaconta.png"
 CONCLUIDOBOTAO = "concluidobotao.png"
 AGUARDE = "aguarde.png"
+IGNORAR = "ignorar.png"
 
 ROBUX = "robux.png"
 OITENTAROBUX = "80robux.png"
@@ -38,6 +40,10 @@ COMPRAR = "comprar.png"
 FECHAR = "fechar.png"
 FECHARROBUX = "fecharrobux.png"
 CLOSE = "close.png"
+USEESSACONTA = "useessaconta.png"
+AJUDENOS = "ajudenos.png"
+PREMIUM = "premium.png"
+PAGAR = "pagar.png"
 
 
 class AutoLogin:
@@ -62,11 +68,10 @@ class AutoLogin:
 
         os.system("start ms-settings:")
         time.sleep(1)
-        controller, imprimir = AImg("intell/imgs", "intell/imgs/users", str(os.getlogin()) + '.png',
-                                    0.8), AImg.Printer()
+        controller = AImg("imgs", 0.9)
 
         controller.WaitUntil(CONTAS)
-        controller.WaitDisappear(UPDATE)
+        controller.WaitDisappear(CONTAS)
 
         controller.WaitUntil(CAMERA, True)
         parar = controller.Exists(PARAR_DE_ENTRAR)
@@ -95,7 +100,7 @@ class AutoLogin:
         controller.WaitDisappear(AGUARDE)
         os.system("taskkill /IM SystemSettings.exe /F")
 
-    def roblox(self, quantidade: int):
+    def roblox(self):
 
         with open(f"usuariostxt/{os.getlogin()}.txt", 'r') as arquivo:
             linhas = arquivo.readlines()
@@ -109,8 +114,7 @@ class AutoLogin:
             print(email + ";" + senha)
             os.system("start ms-settings:")
             time.sleep(1)
-            controller, imprimir = AImg("intell/imgs", "intell/imgs/users", str(os.getlogin()) + '.png',
-                                        0.8), AImg.Printer()
+            controller = AImg("imgs", 0.9)
 
             controller.WaitUntil(CONTAS)
             controller.WaitDisappear(UPDATE)
@@ -138,7 +142,16 @@ class AutoLogin:
             controller.WaitUntil(SENHA)
             pyautogui.write(senha)
             controller.WaitUntil(ENTRARBOTAO)
-            controller.WaitUntil(PROXIMOUSARESSACONTA)
+            valido = controller.WaitIf(AJUDENOS, USEESSACONTA)
+            if valido == "1 Valido":
+                controller.WaitUntil(IGNORAR)
+                controller.WaitDisappear(IGNORAR)
+            controller.WaitUntil(USEESSACONTA,True)
+            valido = controller.WaitIf(PROXIMOUSARESSACONTA, PROXIMOBOTAO)
+            if valido == "1 Valido":
+                controller.WaitUntil(PROXIMOUSARESSACONTA)
+            elif valido == "2 Valido":
+                controller.WaitUntil(PROXIMOBOTAO)
             controller.WaitDisappear(AGUARDE)
             os.system("taskkill /IM SystemSettings.exe /F")
 
@@ -147,8 +160,7 @@ class AutoLogin:
             else:
                 os.startfile(fr"C:\Users\{str(os.getlogin())}\Desktop\Roblox.lnk")
             time.sleep(4)
-            controller, imprimir = AImg("intell/imgs", "intell/imgs/users", str(os.getlogin()) + '.png',
-                                        0.8), AImg.Printer("Roblox")
+            controller = AImg("imgs", 0.9)
             controller.WaitUntil(ROBUX)
             controller.WaitUntil(OITENTAROBUX)
             controller.WaitUntil(SENHA)
@@ -172,33 +184,32 @@ class AutoLogin:
                 controller.WaitUntil(CEP)
                 pyautogui.write("11111")
                 controller.WaitUntil(SALVAR)
-            controller.WaitUntil(COMPRAR)
-            fecha = controller.WaitIf(FECHAR, CLOSE)
-            if fecha == "1 Valido":
-                controller.WaitUntil(FECHAR)
-            else:
-                controller.WaitUntil(CLOSE)
-            for _ in range(quantidade):
-                controller.WaitUntil(OITENTAROBUX)
-                controller.WaitUntil(SENHA)
-                pyautogui.write(senha)
-                controller.WaitUntil(ENTRARBOTAO)
+            while True:
                 controller.WaitUntil(COMPRAR)
                 fecha = controller.WaitIf(FECHAR, CLOSE)
                 if fecha == "1 Valido":
                     controller.WaitUntil(FECHAR)
                 else:
                     controller.WaitUntil(CLOSE)
-            controller.WaitUntil(FECHARROBUX)
+                controller.WaitUntil(OITENTAROBUX)
+                controller.WaitUntil(SENHA)
+                pyautogui.write(senha)
+                controller.WaitUntil(ENTRARBOTAO)
+                controller.WaitUntil(PREMIUM, True)
+                existe = controller.Exists(PAGAR)
+                if existe:
+                    window = gw.getWindowsWithTitle('Roblox')[0]
+                    window.close()
+                    break
             primeiralinha = linhas[0]
             linhas.remove(primeiralinha)
 
             with open(f"usuariostxt/{os.getlogin()}.txt", 'w') as arquivo:
                 arquivo.writelines(linhas)
 
-    def loginAPI(self, *quantidade):
+    def loginAPI(self):
         if self.logada == "r":
-            return self.roblox(quantidade[0])
+            return self.roblox()
         elif self.logada == "s":
             return self.normal()
         else:
@@ -209,7 +220,9 @@ if __name__ == '__main__':
 
     logar = AutoLogin(logada, "accs.txt")
     if logada.lower() == "r":
-        quantidade = int(input("comprar quantas vezes robux? PARA BOT MANUAL: 3, PARA O AUTOMATICO: 1\n")) if logada.lower() == "r" else None
-        logar.loginAPI(quantidade)
+        key = OpenKey(HKEY_CURRENT_USER, r'Control Panel\International\Geo', 0, KEY_ALL_ACCESS)
+        SetValueEx(key, "Name", 0, REG_SZ, "IT")
+        SetValueEx(key, "Nation", 0, REG_SZ, "118")
+        logar.loginAPI()
     else:
         logar.loginAPI()
