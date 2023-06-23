@@ -10,9 +10,11 @@ import pygetwindow as gw
 import shutil
 import datetime
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib3
 import subprocess
 import pytz
+import keyboard
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -20,7 +22,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
-import keyboard
+import string
 from IA import LogadorBOT
 from IA.intell import IAA
 from source import *
@@ -48,7 +50,7 @@ class AutoFarm:
                 ismain = True if userlido["UserPrincipal"] == os.getlogin() else None
 
         if ismain is not None:
-            principal = input("Digite 1 para definir o usuario principal\n") if not ismain else None
+            principal = input("Digite 1 para definir o usuario principal\n>> ") if not ismain else None
 
         if not os.path.isfile("IA/configs/user.json"):
             if principal == "1":
@@ -79,7 +81,7 @@ class AutoFarm:
                 quantidade = int(userlido["Quantidade"]) if int(userlido["Quantidade"]) > 0 else None
 
         if quantidade is not None:
-            quantia = int(input("Quantos usuarios vão ser feitos?\n")) if not quantidade else None
+            quantia = int(input("Quantos usuarios vão ser feitos?\n>> ")) if not quantidade else None
 
         if not os.path.isfile("IA/configs/quantidade.json"):
             if quantia > 0:
@@ -106,13 +108,12 @@ class AutoFarm:
                 os.startfile(fr"C:\Users\{str(os.getlogin())}\OneDrive\Área de Trabalho\Fiddler Classic.lnk")
             else:
                 os.startfile(fr"C:\Users\{str(os.getlogin())}\Desktop\Fiddler Classic.lnk")
-            time.sleep(2.5)
-            controller, imprimir = IAA.AImg("intell/imgs", "intell/imgs/users", str(os.getlogin()) + '.png',
-                                            0.8), IAA.AImg.Printer("Progress Telerik Fiddler Classic")
+            controller = IAA.AImg("intell/imgs", 0.8)
             valid = controller.WaitIf("simfiddler.png", "fiddlerdocument.png")
             if valid == "1 Valido":
                 controller.WaitUntil("simfiddler.png")
-            time.sleep(2.5)
+            controller.WaitUntil("fiddlerdocument.png", True)
+            time.sleep(2)
             print("Fiddler aberto\n\n")
         elif method.lower() == "close":
             window = gw.getWindowsWithTitle('Progress Telerik Fiddler Classic')[0]
@@ -127,10 +128,8 @@ class AutoFarm:
             os.startfile(fr"C:\Users\{str(os.getlogin())}\OneDrive\Área de Trabalho\Microsoft Rewards.lnk")
         else:
             os.startfile(fr"C:\Users\{str(os.getlogin())}\Desktop\Microsoft Rewards.lnk")
-        time.sleep(2.5)
-        controller, imprimir = IAA.AImg("intell/imgs", "intell/imgs/users", str(os.getlogin()) + '.png',
-                                        0.8), IAA.AImg.Printer("Microsoft Rewards")
-        valid = controller.WaitIf("experimente.png", "detalhamento.png")
+        controller = IAA.AImg("intell/imgs", 0.9)
+        valid = controller.WaitIf("experimente.png", "detalhamento.png", "localizacao.png")
         if valid == "1 Valido":
             controller.WaitUntil("experimente.png")
             controller.WaitUntil("detalhamento.png", True)
@@ -138,6 +137,11 @@ class AutoFarm:
         elif valid == "2 Valido":
             controller.WaitUntil("detalhamento.png", True)
             time.sleep(4)
+        elif valid == "3 Valido":
+            subprocess.run("taskkill /IM Microsoft.Rewards.Xbox.exe /F", stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL)
+            time.sleep(3.5)
+            self.rewards()
         subprocess.run("taskkill /IM Microsoft.Rewards.Xbox.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         os.chdir(self.diretorio_atual)
         print("Rewards logado\n\n")
@@ -151,30 +155,30 @@ class AutoFarm:
         else:
             os.startfile(fr"C:\Users\{str(os.getlogin())}\Desktop\Xbox.lnk")
         time.sleep(2.5)
-        controller, imprimir = IAA.AImg("intell/imgs", "intell/imgs/users", str(os.getlogin()) + '.png',
-                                        0.8), IAA.AImg.Printer("Xbox")
+        controller = IAA.AImg("intell/imgs", 0.9)
         controller.WaitUntil("xboxg.png", True)
         time.sleep(1.5)
         existe = controller.Exists("entrar.png")
         if not existe:
-            time.sleep(2)
+            time.sleep(3)
             print("A conta já esta logada no xbox\n\n")
         else:
             controller.WaitUntil("entrar.png")
             controller.WaitUntil("entrarxbox.png")
-            time.sleep(3.5)
-            ife = controller.WaitIf("xbox.png", "pausa.png")
+            controller.WaitDisappear("configs.png")
+            time.sleep(4)
+            ife = controller.WaitIf("xbox.png", "gamepass.png")
             if ife == "1 Valido":
                 controller.WaitUntil("xbox.png", True)
                 time.sleep(2.5)
                 controller.WaitUntil("vamosjogar.png")
-                valido = controller.WaitIf("tentarnovamente.png", "pausa.png")
+                valido = controller.WaitIf("tentarnovamente.png", "gamepass.png")
                 if valido == "1 Valido":
                     controller.WaitUntil("tentarnovamente.png")
-                    controller.WaitUntil("pausa.png", True)
-                    time.sleep(2.5)
+                    controller.WaitUntil("gamepass.png", True)
+                    time.sleep(4)
                 else:
-                    time.sleep(2.5)
+                    time.sleep(4)
                 print("Xbox logado\n\n")
             else:
                 time.sleep(2)
@@ -317,7 +321,8 @@ class AutoFarm:
 
 class Login:
     def __init__(self):
-        self.delay = 8
+        self.delay = 25
+        self.cookiesbing = None
 
         self.chrome_options = ChromeOptions()
 
@@ -375,17 +380,15 @@ class Login:
                 driver.find_element('xpath', '//*[@id="idSIButton9"]').click()
             driver.get("https://bing.com/")
             time.sleep(4)
-            cookiesbing = driver.get_cookies()
+            self.cookiesbing = driver.get_cookies()
 
             driver.quit()
             print("Site logado\n\n")
 
-            return cookiesbing
+        except:
+            pass
 
-        except Exception as e:
-            raise Exception(e)
-
-    def checkpesquisa(self):
+    def checkpesquisa(self, pais):
         while True:
             try:
                 with open(f"rewards/{os.getlogin()}.txt", "r") as v:
@@ -393,75 +396,72 @@ class Login:
                     authorization = [linha for linha in x if linha.__contains__("Authorization: ")]
                     authorization = authorization[0].strip()
                     authorization = authorization.replace("Authorization: ", "")
-                saldo = checkpesquisa(authorization)
-                return int(saldo)
+                saldo, pesquisa = checkpesquisa(authorization, pais)
+                return int(saldo), int(pesquisa)
             except:
                 continue
 
-    def pesquisa(self, pontos: int, cookiesb, pais):
-        print("Pesquisando")
+    def pesquisa(self, pontos: int, cookiesb, pais, quantidade=155):
 
-        os.chdir(autofarm.diretorio_atual)
-        with open("source/tampermonkey.js") as file:
-            tampermonkey_script = file.read()
-        chrome_options = ChromeOptions()
+        quantidade1, pesquisadas1 = self.checkpesquisa(pais)
 
-        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
-        chrome_options.add_argument('--log-level=3')
+        executor = ThreadPoolExecutor(max_workers=40)
+        tasks = []
 
-        chrome_options.add_argument(
-            "user-agent=Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36")
+        for _ in range(int(quantidade) + 20):
+            task = executor.submit(self.pesquisareq, self.cookiesbing)
+            tasks.append(task)
 
-        driverabs = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
-        driverabs.get("https://bing.com/")
-        driverabs.maximize_window()
-        self.delay = 6
-        while True:
-            try:
-                self.bingantibug('//*[@id="sb_form_c"]', driverabs)
-                break
-            except:
-                login.get_location(pais)
-                time.sleep(2.5)
-                while True:
-                    try:
-                        driverabs.get("https://bing.com")
-                        break
-                    except:
-                        time.sleep(1.5)
-                        continue
-                continue
-        for cookie in cookiesb:
-            driverabs.add_cookie(cookie)
-        driverabs.refresh()
-        while True:
-            try:
-                self.bingantibug('//*[@id="sb_form_c"]', driverabs)
-                break
-            except:
-                login.get_location(pais)
-                time.sleep(2.5)
-                while True:
-                    try:
-                        driverabs.get("https://bing.com")
-                        break
-                    except:
-                        time.sleep(1.5)
-                        continue
-                continue
-        self.delay = 8
-        time.sleep(1.5)
-        quantidade = self.checkpesquisa()
-        tries = 0
-        while int(quantidade) < pontos:
-            driverabs.execute_script(tampermonkey_script)
-            time.sleep(10)
-            quantidade = self.checkpesquisa()
-            sys.stdout.write("\rA Quantidade de Pontos ainda é: " + str(quantidade))
-            sys.stdout.flush()
-            tries += 1
-        driverabs.quit()
+        for task in as_completed(tasks):
+            task.result()
+
+        executor.shutdown(wait=True)
+
+        quantidade2, pesquisadas2 = self.checkpesquisa(pais)
+        sys.stdout.write("\rA Quantidade de Pontos ainda é: " + str(quantidade2))
+        sys.stdout.flush()
+        if int(pesquisadas1) == int(pesquisadas2):
+            if int(pesquisadas2) < 50:
+                if pais != "brazil":
+                    print("\nA vpn provavelmente bugou, reconectando e refazendo")
+                    self.connect(pais) if ismain else None
+                    self.pesquisa(pontos, cookiesb, pais, quantidade=50 - int(pesquisadas2))
+                else:
+                    print("\nA vpn provavelmente bugou, reconectando e refazendo")
+                    self.connect("", True) if ismain else None
+                    self.pesquisa(pontos,cookiesb,pais, quantidade=50 - int(pesquisadas2))
+        if int(quantidade2) < pontos:
+            print("\nFazendo mais pesquisas!")
+            self.pesquisa(pontos, cookiesb, pais, quantidade=50 - int(pesquisadas2))
         print("\nPesquisa Completa! \n\n")
+
+    def pesquisareq(self, cookiesb):
+
+        headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25",
+            "sec-ch-ua-full-version-list": '"Not.A/Brand";v="8.0.0.0", "Chromium";v="114.0.5735.134", "Google Chrome";v="114.0.5735.134"',
+            "Upgrade-Insecure-Requests": "1"
+        }
+
+        cookies_requests = {}
+
+        for cookie in cookiesb:
+            name = cookie['name']
+            value = cookie['value']
+            cookies_requests[name] = value
+
+        palavra_aleatoria = ''.join(random.choices(string.ascii_lowercase, k=10))
+        while True:
+            try:
+                response = requests.get(f"https://www.bing.com/search?q={palavra_aleatoria}", cookies=cookies_requests, headers=headers, verify=False)
+                break
+            except:
+                continue
+        if response.status_code != 200:
+            print('Erro:', response.status_code)
 
     def verifica_velocidade_conexao(self):
         url = "https://www.bing.com"
@@ -492,6 +492,16 @@ class Login:
 
         with open(f"IA/usuariostxt/{os.getlogin()}.txt", 'r') as arquivo:
             linhas = arquivo.readlines()
+        if len(linhas) >= quantidade:
+            deleta = input("Tem contas antigas catalogadas, deseja deletar elas? (S/N)\n>> ")
+            if deleta.lower() == "s":
+                os.remove(f"IA/usuariostxt/{os.getlogin()}.txt")
+                open(f"IA/usuariostxt/{os.getlogin()}.txt", 'w').close()
+                with open(f"IA/usuariostxt/{os.getlogin()}.txt", 'r') as arquivo:
+                    linhas = arquivo.readlines()
+            else:
+                pass
+
         while len(linhas) < quantidade:
             print("Desbugando contas")
             desbugador = Desbug(quantidade - len(linhas), "1116093603199057961")
@@ -500,7 +510,7 @@ class Login:
                 linhas = arquivo.readlines()
             print("Contas desbugadas\n\n")
 
-    def get_location(self, pais, *command):
+    def get_location(self, pais):
         tries = 0
         urllib3.disable_warnings()
         while True:
@@ -514,11 +524,9 @@ class Login:
             except:
                 pass
             tries += 1
-            if command:
+            if ismain:
                 if tries == 23:
-                    subprocess.run("taskkill /IM openvpn.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    subprocess.run("taskkill /IM openvpn-gui.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    subprocess.Popen(command[0], shell=True)
+                    self.connect(pais)
                     tries = 0
 
     def connect(self, pais, *disconnect):
@@ -532,7 +540,7 @@ class Login:
                     if os.path.isfile(f"IA/vpns/{country}.ovpn"):
                         os.remove(f"IA/vpns/{country}.ovpn")
                     if country == "newzealand":
-                        ae = random.randint(82, 107)
+                        ae = random.randint(83, 107)
                         url_servidor_nz = f"https://downloads.nordcdn.com/configs/files/ovpn_legacy/servers/nz{str(ae)}.nordvpn.com.udp1194.ovpn"
                     else:
                         ae = random.randint(186, 286)
@@ -561,7 +569,7 @@ class Login:
             command = f'{openvpn_gui_executable} --connect "{country}"'
             subprocess.Popen(command, shell=True)
 
-            self.get_location(pais, command)
+            self.get_location(pais)
             if ismain:
                 conectado = self.verifica_velocidade_conexao()
                 if conectado:
@@ -578,10 +586,9 @@ class Login:
             self.get_location("brazil")
             print("Desconectado\n\n")
 
-
 if __name__ == '__main__':
 
-    while True:
+    while not keyboard.is_pressed("'"):
 
         autofarm = AutoFarm()
         login = Login()
@@ -605,7 +612,7 @@ if __name__ == '__main__':
             if os.path.exists("IA/usuariostxt/users"):
                 shutil.rmtree(f'IA/usuariostxt/users')
 
-        print("--------------- Começando ---------------\n\n")
+        print("------------------ Começando ------------------")
         login.connect("", True) if ismain else None
         login.get_location("brazil")
         time.sleep(2.5)
@@ -615,11 +622,12 @@ if __name__ == '__main__':
 
         autofarm.logar()
         autofarm.fiddler()
+        time.sleep(1.5)
         autofarm.rewards()
         while not os.path.isfile(f"rewards/{os.getlogin()}.txt"):
             print("Refazendo o rewards por falta de txt.")
             autofarm.rewards()
-            time.sleep(7)
+            time.sleep(5)
         autofarm.sincronizar(quantidade=usuarios)
         autofarm.xbox()
         while not os.path.isfile(f"xbox/{os.getlogin()}xbox.txt"):
@@ -633,42 +641,45 @@ if __name__ == '__main__':
             print("Fazendo as tasks do aplicativo/conquista do xbox")
             rewardsthread = threading.Thread(target=autofarm.processrewards)
             xboxthread = threading.Thread(target=autofarm.farmxbox)
+            logarsite = threading.Thread(target=login.logarsite, args=(autofarm.email, autofarm.senha))
             rewardsthread.start()
             xboxthread.start()
+            logarsite.start()
             rewardsthread.join()
             xboxthread.join()
+            logarsite.join()
             print("Tasks feitas!\n\n")
+        else:
+            login.logarsite(autofarm.email, autofarm.senha)
 
-        autofarm.sincronizar(quantidade=usuarios)
-        cookiesbing = login.logarsite(autofarm.email, autofarm.senha)
-        while not len(cookiesbing):
-            login.connect("brazil") if autofarm.ismain else None
-            login.get_location("brazil")
-            cookiesbing = login.logarsite(autofarm.email, autofarm.senha)
+        while login.cookiesbing is None or not len(login.cookiesbing):
+            login.logarsite(autofarm.email, autofarm.senha)
 
         autofarm.sincronizar(quantidade=usuarios)
         login.connect("italy") if ismain else None
         login.get_location("italy")
         autofarm.sincronizar(quantidade=usuarios)
         autofarm.fiddler()
-        login.pesquisa(1000, cookiesbing, "italy")
+        print("Pesquisando")
+        login.pesquisa(1000, login.cookiesbing, "italy")
         autofarm.sincronizar(quantidade=usuarios)
 
         hora_atual = login.obter_horario_brasilia()
-        if 20 > int(hora_atual) > 7:
+        if 20 > int(hora_atual) > 9:
             login.connect("new zealand") if ismain else None
             login.get_location("new zealand")
+            print("Pesquisando")
             autofarm.sincronizar(quantidade=usuarios)
-            login.pesquisa(2000, cookiesbing, "taiwan")
+            login.pesquisa(2000, login.cookiesbing, "new zealand")
         else:
             login.connect("", True) if ismain else None
-            login.get_location("brazil") if ismain else None
+            login.get_location("brazil")
+            print("Pesquisando")
             autofarm.sincronizar(quantidade=usuarios)
             time.sleep(3)
-            login.pesquisa(2000, cookiesbing, "brazil")
+            login.pesquisa(2000, login.cookiesbing, "brazil")
 
         autofarm.sincronizar(quantidade=usuarios)
         autofarm.fiddler("close")
         autofarm.getaccs(1, True)
-        # driver.close()
-        print("FINALIZADO!!!!!!!!!!!!!!!!!!!\n\n")
+        print("!!!!!!!!!!!!!!!!!!FINALIZADO!!!!!!!!!!!!!!!!!!!\n\n")
