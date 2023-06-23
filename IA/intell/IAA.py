@@ -1,18 +1,15 @@
 import cv2
 import pydirectinput
 from mss import mss
-import mss.tools as mss_tools
-import ctypes
+import numpy as np
 import os
-
+import time
 
 class AImg:
     bbox = None
-    def __init__(self, localimg,localsrc, src, vvar):
-        self.LOCALSRC = localsrc
+    def __init__(self, localimg, vvar):
         self.VVAR = vvar
         self.THRESHOLD = False
-        self.SRC = src
         self.READSCR = None
         self.READIMG = None
         self.LOCALIMG = localimg
@@ -24,11 +21,10 @@ class AImg:
         self.H = None
         self.max_val = None
 
-    def analyzer(self, img):
-        self.READSCR = cv2.imread(self.LOCALSRC + '/' + self.SRC, cv2.IMREAD_ANYCOLOR)
-        self.READIMG = cv2.imread(self.LOCALIMG + '/' + img, cv2.IMREAD_ANYCOLOR)
+    def analyzer(self, imagem, source):
+        self.READIMG = cv2.imread(self.LOCALIMG + '/' + imagem, cv2.COLOR_BGRA2BGR)
 
-        self.RESULT = cv2.matchTemplate(self.READSCR, self.READIMG, cv2.TM_CCOEFF_NORMED)
+        self.RESULT = cv2.matchTemplate(source, self.READIMG, cv2.TM_CCOEFF_NORMED)
 
         min_val, self.max_val, min_loc, self.MAX_LOC = cv2.minMaxLoc(self.RESULT)
 
@@ -54,54 +50,63 @@ class AImg:
             pydirectinput.moveTo(self.X, self.Y)
 
     class Printer:
-        def __init__(self, *app):
-            with mss():
-                hwnd = ctypes.windll.user32.FindWindowW(0, app[0] if app else "Configurações")
-                rect = ctypes.wintypes.RECT()
-                ctypes.windll.user32.GetWindowRect(hwnd, ctypes.pointer(rect))
-
-            AImg.bbox = (rect.left, rect.top, rect.right, rect.bottom)
-
-        def printar(self, nome, diretorio):
+        def printar(self):
             with mss() as sct:
-                shot = sct.grab(AImg.bbox)
-                mss_tools.to_png(shot.rgb, shot.size, output=diretorio + '/' + nome)
+                # Configurar as opções de captura
+                monitor = sct.monitors[1]  # Índice do monitor (0 para o primeiro monitor, 1 para o segundo, etc.)
+                capture_options = {
+                    "top": monitor["top"],  # Posição superior do monitor
+                    "left": monitor["left"],  # Posição esquerda do monitor
+                    "width": monitor["width"],  # Largura do monitor
+                    "height": monitor["height"],  # Altura do monitor
+                }
+                screenshot = sct.grab(capture_options)
+                screenshot_np = np.array(screenshot)
+
+                screenshot_cv = cv2.cvtColor(screenshot_np, cv2.COLOR_BGRA2BGR)
+                AImg.bbox = (capture_options["left"], capture_options["top"], capture_options["left"] + capture_options["width"], capture_options["top"] + capture_options["height"])
+                return screenshot_cv
 
     def Mouse(self):
         return AImg.Clicker(self)
 
     def WaitUntil(self, source, *click):
-        self.Printer.printar(self, str(os.getlogin()) + '.png', "intell/imgs/users")
-        self.analyzer(source)
+        screen = self.Printer.printar(self)
+        self.analyzer(source, screen)
         while not self.THRESHOLD:
-            self.Printer.printar(self, str(os.getlogin()) + '.png', "intell/imgs/users")
-            self.analyzer(source)
+            screen = self.Printer.printar(self)
+            self.analyzer(source, screen)
         if not click:
             self.Mouse().clicar()
 
     def WaitDisappear(self, source):
-        self.Printer.printar(self, str(os.getlogin()) + '.png', "intell/imgs/users")
-        self.analyzer(source)
+        screen = self.Printer.printar(self)
+        self.analyzer(source, screen)
         while self.THRESHOLD:
-            self.Printer.printar(self, str(os.getlogin()) + '.png', "intell/imgs/users")
-            self.analyzer(source)
+            screen = self.Printer.printar(self)
+            self.analyzer(source, screen)
 
-    def WaitIf(self, source1, source2):
+    def WaitIf(self, source1, source2, *source3):
         self.THRESHOLD = False
         while not self.THRESHOLD:
-            self.Printer.printar(self, str(os.getlogin()) + '.png', "intell/imgs/users")
-            self.analyzer(source1)
+            screen = self.Printer.printar(self)
+            self.analyzer(source1, screen)
             if self.THRESHOLD:
                 return "1 Valido"
             else:
-                self.Printer.printar(self, str(os.getlogin()) + '.png', "intell/imgs/users")
-                self.analyzer(source2)
+                screen = self.Printer.printar(self)
+                self.analyzer(source2, screen)
                 if self.THRESHOLD:
                     return "2 Valido"
+                if source3:
+                    screen = self.Printer.printar(self)
+                    self.analyzer(source3[0], screen)
+                    if self.THRESHOLD:
+                        return "3 Valido"
 
     def Exists(self, source):
-        self.Printer.printar(self, str(os.getlogin()) + '.png', "intell/imgs/users")
-        self.analyzer(source)
+        screen = self.Printer.printar(self)
+        self.analyzer(source, screen)
         if self.THRESHOLD:
             return True
         else:
@@ -109,12 +114,8 @@ class AImg:
 
 
 if __name__ == '__main__':
+    aiai = AImg("imgs", 0.9)
 
-    cu, imprimir = AImg("imgs", "screen.png", 0.9), AImg.Printer("whatsapp")
-
-    imprimir.printar("screen.png", "imgs")
-    cu.analyzer("remove.png")
-
-    cu.WaitUntil(cu, imprimir, "remove.png")
+    aiai.WaitUntil("sarvo.png")
 
 
