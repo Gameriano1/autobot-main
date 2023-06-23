@@ -3,6 +3,7 @@ import time
 from winreg import *
 import mouse
 import pyautogui
+import subprocess
 import pygetwindow as gw
 
 from intell.IAA import AImg
@@ -68,7 +69,7 @@ class AutoLogin:
 
         os.system("start ms-settings:")
         time.sleep(1)
-        controller = AImg("imgs", 0.9)
+        controller = AImg("intell/imgs", 0.9)
 
         controller.WaitUntil(CONTAS)
         controller.WaitDisappear(CONTAS)
@@ -114,25 +115,54 @@ class AutoLogin:
             print(email + ";" + senha)
             os.system("start ms-settings:")
             time.sleep(1)
-            controller = AImg("imgs", 0.9)
+            controller = AImg("intell/imgs", 0.9)
 
             controller.WaitUntil(CONTAS)
-            controller.WaitDisappear(UPDATE)
 
             controller.WaitUntil(CAMERA, True)
             parar = controller.Exists(PARAR_DE_ENTRAR)
             print("parar entrar")
             if parar:
                 controller.WaitUntil(PARAR_DE_ENTRAR)
+                controller.WaitDisappear(PARAR_DE_ENTRAR)
+                time.sleep(3)
 
             controller.WaitUntil(EMAILS_E_CONTAS)
-            controller.WaitUntil(EMALIS)
-            time.sleep(1.5)
-            para = controller.Exists(MS_LOGO)
-            if para:
-                controller.WaitUntil(MS_LOGO)
-                controller.WaitUntil(REMOVERBOTAO)
-                controller.WaitUntil(SIMREMOVER)
+            controller.WaitUntil(EMALIS, True)
+            if parar:
+                while True:
+                    time.sleep(3.5)
+                    existe = controller.Exists(MS_LOGO)
+                    if existe:
+                        controller.WaitUntil(MS_LOGO)
+                        time.sleep(1)
+                        existe = controller.Exists(REMOVERBOTAO)
+                        if existe:
+                            controller.WaitUntil(REMOVERBOTAO)
+                        while not existe:
+                            controller.WaitUntil(INFOS)
+                            controller.WaitUntil(CAMERA, True)
+                            existe = controller.Exists(PARAR_DE_ENTRAR)
+                            if existe:
+                                controller.WaitUntil(PARAR_DE_ENTRAR)
+                                controller.WaitDisappear(PARAR_DE_ENTRAR)
+                                time.sleep(3)
+                            controller.WaitUntil(EMAILS_E_CONTAS)
+                            controller.WaitUntil(MS_LOGO)
+                            existe = controller.Exists(REMOVERBOTAO)
+                            if existe:
+                                controller.WaitUntil(REMOVERBOTAO)
+                        controller.WaitUntil(SIMREMOVER)
+                        controller.WaitUntil(INFOS)
+                        controller.WaitUntil(CAMERA, True)
+                        controller.WaitUntil(EMAILS_E_CONTAS)
+                        controller.WaitUntil(EMALIS, True)
+                        time.sleep(1.5)
+                        controller.WaitDisappear(MS_LOGO)
+                        break
+                    else:
+                        break
+
             controller.WaitUntil(ADICIONAR_CONTA)
             controller.WaitUntil(OUTLOOK_COM)
             controller.WaitUntil(CONTINUARBUTAO)
@@ -142,25 +172,19 @@ class AutoLogin:
             controller.WaitUntil(SENHA)
             pyautogui.write(senha)
             controller.WaitUntil(ENTRARBOTAO)
-            valido = controller.WaitIf(AJUDENOS, USEESSACONTA)
-            if valido == "1 Valido":
-                controller.WaitUntil(IGNORAR)
-                controller.WaitDisappear(IGNORAR)
-            controller.WaitUntil(USEESSACONTA,True)
-            valido = controller.WaitIf(PROXIMOUSARESSACONTA, PROXIMOBOTAO)
-            if valido == "1 Valido":
+            existe = controller.WaitIf(PROXIMOUSARESSACONTA, PROXIMOBOTAO)
+            if existe == "1 Valido":
                 controller.WaitUntil(PROXIMOUSARESSACONTA)
-            elif valido == "2 Valido":
+            if existe == "2 Valido":
                 controller.WaitUntil(PROXIMOBOTAO)
             controller.WaitDisappear(AGUARDE)
-            os.system("taskkill /IM SystemSettings.exe /F")
+            subprocess.run("taskkill /IM SystemSettings.exe /F", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
             if os.getlogin() == "Black":
                 os.startfile(fr"C:\Users\{str(os.getlogin())}\OneDrive\Área de Trabalho\Roblox.lnk")
             else:
                 os.startfile(fr"C:\Users\{str(os.getlogin())}\Desktop\Roblox.lnk")
             time.sleep(4)
-            controller = AImg("imgs", 0.9)
             controller.WaitUntil(ROBUX)
             controller.WaitUntil(OITENTAROBUX)
             controller.WaitUntil(SENHA)
