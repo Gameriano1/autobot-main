@@ -16,7 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 class login:
     def __init__(self, email, senha, canal):
 
-        veio = r.get("https://contas2-b9481-default-rtdb.firebaseio.com/" + "Informações/.json",
+        veio = r.get("https://contas2-b9481-default-rtdb.firebaseio.com/" + "infos/.json",
                             verify=False).json()
         token = veio["token"]
 
@@ -63,6 +63,7 @@ class login:
             while titulo == "Continuar":
                 titulo = driver.title
             while titulo == "Ajude-nos a proteger sua conta":
+                driver.execute_script("window.scrollTo(0, document.body.scrollWidth);")
                 self.bingantibug('//*[@id="iShowSkip"]', driver)
                 driver.find_element('xpath', '//*[@id="iShowSkip"]').click()
                 titulo = driver.title
@@ -126,21 +127,29 @@ class login:
             driver.find_element('xpath', '//*[@id="Accept"]').click()
             time.sleep(4)
             mostra = driver.find_elements('xpath', '//*[@id="undefined"]/div[2]/div/button')
+            tries = 0
             while mostra:
+                if tries > 4:
+                    return
                 driver.get(
                     "https://account.xbox.com/pt-br/accountcreation?returnUrl=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&ru=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&rtc=1&csrf=3VhQvhdMuj732EgcoWdImeMRZtPOvCd4I3KCMOf43kD0IYXFqOhyr1VpL60wRIIjzzNB6RpmOc4YJcvfLkVCwo16OyA1&wa=wsignin1.0")
                 self.bingantibug('//*[@id="Accept"]', driver)
                 driver.find_element('xpath', '//*[@id="Accept"]').click()
                 time.sleep(6)
                 mostra = driver.find_elements('xpath', '//*[@id="undefined"]/div[2]/div/button')
+                tries += 1
             time.sleep(4)
             url = driver.current_url
+            tries = 0
             while url != "https://www.xbox.com/pt-BR/":
                 try:
+                    if tries > 4:
+                        return
                     driver.get(
                         "https://account.xbox.com/pt-br/accountcreation?returnUrl=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&ru=https%3a%2f%2fwww.xbox.com%2fpt-BR%2f&rtc=1&csrf=3VhQvhdMuj732EgcoWdImeMRZtPOvCd4I3KCMOf43kD0IYXFqOhyr1VpL60wRIIjzzNB6RpmOc4YJcvfLkVCwo16OyA1&wa=wsignin1.0")
                     driver.find_element('xpath', '//*[@id="Accept"]').click()
                     time.sleep(5)
+                    tries += 1
                 except:
                     pass
                 url = driver.current_url
