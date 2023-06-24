@@ -86,23 +86,14 @@ class AImg:
             screen = self.Printer.printar(self)
             self.analyzer(source, screen)
 
-    def WaitIf(self, source1, source2, *source3):
+    def WaitIf(self, *sources):
         self.THRESHOLD = False
         while not self.THRESHOLD:
-            screen = self.Printer.printar(self)
-            self.analyzer(source1, screen)
-            if self.THRESHOLD:
-                return "1 Valido"
-            else:
+            for num, source in enumerate(sources, start=1):
                 screen = self.Printer.printar(self)
-                self.analyzer(source2, screen)
+                self.analyzer(source, screen)
                 if self.THRESHOLD:
-                    return "2 Valido"
-                if source3:
-                    screen = self.Printer.printar(self)
-                    self.analyzer(source3[0], screen)
-                    if self.THRESHOLD:
-                        return "3 Valido"
+                    return f"{num} Valido"
 
     def Exists(self, source):
         screen = self.Printer.printar(self)
