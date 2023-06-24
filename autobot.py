@@ -167,8 +167,10 @@ class AutoFarm:
             controller.WaitUntil("entrarxbox.png")
             controller.WaitDisappear("configs.png")
             time.sleep(4)
-            ife = controller.WaitIf("xbox.png", "gamepass.png")
-            if ife == "1 Valido":
+            ife = controller.WaitIf("xbox.png", "gamepass.png", "entrar2.png")
+            if ife == "1 Valido" or ife == "3 Valido":
+                if ife == "3 Valido":
+                    controller.WaitUntil("entrar2.png")
                 controller.WaitUntil("xbox.png", True)
                 time.sleep(2.5)
                 controller.WaitUntil("vamosjogar.png")
